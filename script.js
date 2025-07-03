@@ -12,36 +12,39 @@ let calendarData = JSON.parse(localStorage.getItem('calendarData')) || {};
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-    generateCalendar();
-    setupEventListeners();
-    initPeriodSelector();
-    
-    if (!localStorage.getItem('firstRun')) {
-        localStorage.setItem('firstRun', 'true');
-        showWelcomeMessage();
-    }
-    
-    window.addEventListener('resize', function() {
-        const newHeight = window.innerHeight;
-        const heightDifference = Math.abs(lastWindowHeight - newHeight);
+    console.log('DOMContentLoaded event fired');
+    try {
+        generateCalendar();
+        setupEventListeners();
+        initPeriodSelector();
         
-        if (heightDifference > 200) {
-            isKeyboardOpen = (newHeight < lastWindowHeight);
-            lastWindowHeight = newHeight;
+        if (!localStorage.getItem('firstRun')) {
+            localStorage.setItem('firstRun', 'true');
+            showWelcomeMessage();
         }
-    });
-    
-    // Проверка обновлений при фокусе приложения
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            checkForUpdates();
-        }
-    });
+        
+        window.addEventListener('resize', function() {
+            const newHeight = window.innerHeight;
+            const heightDifference = Math.abs(lastWindowHeight - newHeight);
+            
+            if (heightDifference > 200) {
+                isKeyboardOpen = (newHeight < lastWindowHeight);
+                lastWindowHeight = newHeight;
+            }
+        });
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+    }
 });
 
 // Генерация календаря
 function generateCalendar() {
     const calendar = document.getElementById('calendar');
+    if (!calendar) {
+        console.error('Элемент calendar не найден');
+        return;
+    }
+    
     calendar.innerHTML = '';
     
     const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -112,11 +115,17 @@ function generateCalendar() {
     
     const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
       "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
-    document.getElementById('current-month-year').textContent = 
-        `${monthNames[currentMonth]} ${currentYear}`;
+      
+    const currentMonthYear = document.getElementById('current-month-year');
+    if (currentMonthYear) {
+        currentMonthYear.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    }
     
     calculateSummary();
 }
+
+// ... остальной код script.js без изменений ...
+// (остальной код остается как в предыдущей версии)
 
 // Обработчик клика по дню
 function handleDayClick(day) {

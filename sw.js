@@ -10,7 +10,6 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-  console.log('Установка новой версии Service Worker v4');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -29,11 +28,9 @@ self.addEventListener('fetch', event => {
   
   event.respondWith(
     caches.match(event.request)
-      .then(cached => cached || fetch(event.request)
-      .catch(() => {
-        if (event.request.url.endsWith('.html')) {
-          return caches.match('/index.html');
-        }
+      .then(cached => {
+        if (cached) return cached;
+        return fetch(event.request);
       })
   );
 });
@@ -54,20 +51,4 @@ self.addEventListener('activate', event => {
     })
     .then(() => self.clients.claim())
   );
-});
-
-self.addEventListener('sync', event => {
-  if (event.tag === 'sync-data') {
-    event.waitUntil(syncCalendarData());
-  }
-});
-
-function syncCalendarData() {
-  return Promise.resolve();
-}
-
-self.addEventListener('message', event => {
-  if (event.data === 'skipWaiting') {
-    self.skipWaiting();
-  }
 });

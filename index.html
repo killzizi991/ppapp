@@ -18,10 +18,36 @@
     
     <!-- iOS splash screen -->
     <link rel="apple-touch-startup-image" href="icon-512.png">
+    
+    <style>
+        /* Временные стили для отладки */
+        #app-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #4e73df;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 2000;
+        }
+        #loading-status {
+            margin-top: 20px;
+            font-size: 1rem;
+        }
+    </style>
 </head>
 <body>
-    <!-- Индикатор загрузки -->
-    <div id="app-loading">Загрузка приложения...</div>
+    <!-- Индикатор загрузки с дополнительной информацией -->
+    <div id="app-loading">
+        Загрузка приложения...
+        <div id="loading-status">Инициализация...</div>
+    </div>
     
     <!-- Навигация -->
     <div class="header">
@@ -108,72 +134,122 @@
 
     <script src="script.js"></script>
     <script>
+        // Функция для обновления статуса загрузки
+        function updateLoadingStatus(message) {
+            const statusElement = document.getElementById('loading-status');
+            if (statusElement) {
+                statusElement.textContent = message;
+            }
+        }
+
         // Принудительное обновление кэша
         const SW_VERSION = 'v4';
-        if (localStorage.getItem('sw_version') !== SW_VERSION) {
-          caches.keys().then(cacheNames => {
-            cacheNames.forEach(cacheName => {
-              caches.delete(cacheName);
-            });
-          });
-          localStorage.setItem('sw_version', SW_VERSION);
-          location.reload();
-        }
-
-        // Функция для перехода в полноэкранный режим
-        function launchFullscreen() {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.mozRequestFullScreen) {
-                elem.mozRequestFullScreen();
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-            }
-        }
-
-        // Проверка запуска с домашнего экрана
-        function isRunningStandalone() {
-            return (window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone ||
-                   document.referrer.includes('android-app://');
-        }
-
-        window.addEventListener('load', () => {
-            document.getElementById('app-loading').style.display = 'none';
+        const currentSwVersion = localStorage.getItem('sw_version');
+        
+        if (currentSwVersion !== SW_VERSION) {
+            updateLoadingStatus('Обновление кэша...');
             
-            // Регистрация Service Worker
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => {
-                        console.log('SW registered');
-                        // Проверка обновлений каждые 24 часа
-                        setInterval(() => reg.update(), 86400000);
-                    })
-                    .catch(err => console.error('SW registration error:', err));
-            }
+            caches.keys().then(cacheNames => {
+                const deletePromises = cacheNames.map(cacheName => {
+                    return caches.delete(cacheName);
+                });
+                
+                return Promise.all(deletePromises);
+            })
+            .then(() => {
+                localStorage.setItem('sw_version', SW_VERSION);
+                updateLoadingStatus('Перезагрузка...');
+                setTimeout(() => location.reload(), 1000);
+            })
+            .catch(error => {
+                console.error('Ошибка при очистке кэша:', error);
+                localStorage.setItem('sw_version', SW_VERSION);
+                updateLoadingStatus('Перезагрузка...');
+                setTimeout(() => location.reload(), 1000);
+            });
+        }
+        else {
+            // Если версия совпадает, продолжаем загрузку
+            initializeApp();
+        }
 
-            // Автоматический полноэкранный режим для PWA
-            if (isRunningStandalone()) {
-                try {
-                    launchFullscreen();
-                } catch (e) {
-                    console.log('Fullscreen error:', e);
+        // Основная функция инициализации приложения
+        function initializeApp() {
+            updateLoadingStatus('Загрузка приложения...');
+            
+            // Функция для перехода в полноэкранный режим
+            function launchFullscreen() {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.mozRequestFullScreen) {
+                    elem.mozRequestFullScreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
                 }
             }
-        });
 
-        // Блокировка стандартных жестов браузера
-        document.addEventListener('touchmove', function(event) {
-            if (event.scale !== 1) {
-                event.preventDefault();
+            // Проверка запуска с домашнего экрана
+            function isRunningStandalone() {
+                return (window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone ||
+                       document.referrer.includes('android-app://'));
             }
-        }, { passive: false });
 
-        // Блокировка контекстного меню
-        document.addEventListener('contextmenu', event => event.preventDefault());
+            // Регистрация Service Worker
+            function registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    updateLoadingStatus('Регистрация Service Worker...');
+                    
+                    return navigator.serviceWorker.register('sw.js')
+                        .then(reg => {
+                            console.log('SW registered');
+                            return reg;
+                        })
+                        .catch(err => {
+                            console.error('SW registration error:', err);
+                            throw err;
+                        });
+                }
+                return Promise.resolve();
+            }
+
+            // Основная инициализация после загрузки
+            window.addEventListener('DOMContentLoaded', () => {
+                updateLoadingStatus('Загрузка завершена...');
+                
+                registerServiceWorker()
+                    .then(() => {
+                        // Скрываем индикатор загрузки
+                        document.getElementById('app-loading').style.display = 'none';
+                        
+                        // Автоматический полноэкранный режим для PWA
+                        if (isRunningStandalone()) {
+                            try {
+                                launchFullscreen();
+                            } catch (e) {
+                                console.log('Fullscreen error:', e);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка инициализации:', error);
+                        document.getElementById('app-loading').style.display = 'none';
+                    });
+            });
+
+            // Блокировка стандартных жестов браузера
+            document.addEventListener('touchmove', function(event) {
+                if (event.scale !== 1) {
+                    event.preventDefault();
+                }
+            }, { passive: false });
+
+            // Блокировка контекстного меню
+            document.addEventListener('contextmenu', event => event.preventDefault());
+        }
     </script>
 </body>
 </html>

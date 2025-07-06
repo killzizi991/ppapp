@@ -31,13 +31,9 @@ export const openDayModal = (dateString, dayData = null) => {
     const form = document.createElement('form');
     form.className = 'modal-form';
     
-    // Выручка
     const revenueGroup = createInputGroup('revenue', 'Выручка', 'number', dayData?.revenue || '');
-    
-    // Клиенты
     const clientsGroup = createInputGroup('clients', 'Клиенты', 'number', dayData?.clients || '');
     
-    // Расходы
     const expensesTitle = document.createElement('h3');
     expensesTitle.textContent = 'Расходы';
     
@@ -54,7 +50,6 @@ export const openDayModal = (dateString, dayData = null) => {
         expensesGroup.appendChild(categoryGroup);
     });
     
-    // Баланс (авторасчет)
     const balanceGroup = document.createElement('div');
     balanceGroup.className = 'balance-group';
     
@@ -68,13 +63,11 @@ export const openDayModal = (dateString, dayData = null) => {
     balanceGroup.appendChild(balanceLabel);
     balanceGroup.appendChild(balanceValue);
     
-    // Кнопка сохранения
     const saveButton = document.createElement('button');
     saveButton.type = 'submit';
     saveButton.className = 'save-button';
     saveButton.textContent = 'Сохранить';
     
-    // Обработчик формы
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -101,7 +94,6 @@ export const openDayModal = (dateString, dayData = null) => {
         }
     });
     
-    // Обновление баланса при изменении значений
     const updateBalance = () => {
         const revenue = parseFloat(revenueGroup.querySelector('input').value) || 0;
         const expenses = expenseCategories.reduce((sum, category) => {
@@ -116,7 +108,6 @@ export const openDayModal = (dateString, dayData = null) => {
         input.addEventListener('input', updateBalance);
     });
     
-    // Сборка модального окна
     form.appendChild(revenueGroup);
     form.appendChild(clientsGroup);
     form.appendChild(expensesTitle);
@@ -129,7 +120,6 @@ export const openDayModal = (dateString, dayData = null) => {
     modalOverlay.appendChild(modal);
     modalRoot.appendChild(modalOverlay);
     
-    // Анимация
     modalOverlay.style.animation = 'fadeIn 0.3s forwards';
     modal.style.animation = 'slideUp 0.3s forwards';
 };

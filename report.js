@@ -11,15 +11,18 @@ export const initReportModule = () => {
     reportBtn.addEventListener('click', openReport);
     closeReportBtn.addEventListener('click', closeReport);
     
-    // Получаем текущие значения из календаря
     currentMonth = parseInt(localStorage.getItem('currentMonth') || new Date().getMonth());
     currentYear = parseInt(localStorage.getItem('currentYear') || new Date().getFullYear());
+    
+    document.addEventListener('monthChanged', () => {
+        currentMonth = parseInt(localStorage.getItem('currentMonth'));
+        currentYear = parseInt(localStorage.getItem('currentYear'));
+    });
 };
 
 async function openReport() {
     const monthData = await getMonthData(currentYear, currentMonth);
     
-    // Рассчитываем показатели
     let totalRevenue = 0;
     let totalClients = 0;
     let daysWithData = 0;
@@ -43,7 +46,6 @@ async function openReport() {
     const totalExpenses = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
     const balance = totalRevenue - totalExpenses;
     
-    // Форматируем отчет
     reportContent.innerHTML = `
         <div class="report-summary">
             <div class="report-item">
@@ -81,13 +83,3 @@ async function openReport() {
 function closeReport() {
     reportModule.style.display = 'none';
 }
-
-// Обновляем данные при изменении месяца
-document.addEventListener('monthChanged', async () => {
-    currentMonth = parseInt(localStorage.getItem('currentMonth'));
-    currentYear = parseInt(localStorage.getItem('currentYear'));
-    
-    if (reportModule.style.display === 'block') {
-        await openReport();
-    }
-});

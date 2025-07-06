@@ -2,24 +2,24 @@
   "name": "Финансовый трекер",
   "short_name": "Финтрекер",
   "start_url": "/ppapp/index.html",
-  "scope": "/ppapp/"
+  "scope": "/ppapp/",
   "display": "standalone",
   "background_color": "#2196F3",
   "theme_color": "#2196F3",
   "description": "Приложение для учета ежедневных финансов",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "/ppapp/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "/ppapp/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "icons/maskable-icon.png",
+      "src": "/ppapp/icons/maskable-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

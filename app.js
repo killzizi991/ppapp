@@ -4,11 +4,14 @@ import { initReportModule } from './report.js';
 document.addEventListener('DOMContentLoaded', async () => {
   // Регистрация сервис-воркера
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/ppapp/service-worker.js', {
-  scope: '/ppapp/'
-})
-      .then(reg => console.log('Service Worker зарегистрирован'))
-      .catch(err => console.error('Ошибка регистрации SW:', err));
+    try {
+      await navigator.serviceWorker.register('/ppapp/service-worker.js', {
+        scope: '/ppapp/'
+      });
+      console.log('Service Worker зарегистрирован');
+    } catch (err) {
+      console.error('Ошибка регистрации SW:', err);
+    }
   }
 
   // Обработка установки PWA

@@ -1,3 +1,6 @@
+localStorage.setItem('currentMonth', currentMonth);
+localStorage.setItem('currentYear', currentYear);
+
 import { getDayData, getMonthData } from './storage.js';
 import { openDayModal } from './modal.js';
 
@@ -25,6 +28,9 @@ const navigateMonth = (direction) => {
     currentMonth = 0;
     currentYear++;
   }
+localStorage.setItem('currentMonth', currentMonth);
+localStorage.setItem('currentYear', currentYear);
+document.dispatchEvent(new CustomEvent('monthChanged'));
   
   renderCalendar();
 };
@@ -123,4 +129,5 @@ const renderCalendar = async () => {
   }
   
   calendarModule.appendChild(calendarGrid);
+  document.addEventListener('dataSaved', renderCalendar);
 };

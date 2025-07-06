@@ -1,11 +1,15 @@
-const CACHE_NAME = 'finance-tracker-v1';
-const OFFLINE_URL = 'offline.html';
+const CACHE_NAME = 'finance-tracker-v2';
+const BASE_PATH = '/ppapp/';
 const urlsToCache = [
-  '/',
-  'index.html',
-  'styles.css',
-  'app.js',
-  'manifest.webmanifest',
+  BASE_PATH,
+  BASE_PATH + 'index.html',
+  BASE_PATH + 'styles.css',
+  BASE_PATH + 'app.js',
+  BASE_PATH + 'manifest.webmanifest',
+  BASE_PATH + 'calendar.js',
+  BASE_PATH + 'modal.js',
+  BASE_PATH + 'report.js',
+  BASE_PATH + 'storage.js',
   'https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.29.3/date_fns.min.js'
 ];
 
@@ -20,17 +24,27 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const requestUrl = new URL(event.request.url);
+  
+  // Пропускаем запросы к другим источникам
+  if (requestUrl.origin !== location.origin) return;
+  
+  // Для навигационных запросов
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .catch(() => caches.match(OFFLINE_URL))
+        .catch(() => caches.match(BASE_PATH + 'index.html'))
     );
-  } else {
-    event.respondWith(
-      caches.match(event.request)
-        .then(response => response || fetch(event.request))
-    );
+    return;
   }
+  
+  // Для остальных запросов
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        return response || fetch(event.request);
+      })
+  );
 });
 
 self.addEventListener('activate', event => {

@@ -1,6 +1,3 @@
-localStorage.setItem('currentMonth', currentMonth);
-localStorage.setItem('currentYear', currentYear);
-
 import { getDayData, getMonthData } from './storage.js';
 import { openDayModal } from './modal.js';
 
@@ -9,18 +6,28 @@ const currentMonthYearEl = document.getElementById('currentMonthYear');
 const prevMonthBtn = document.getElementById('prevMonthBtn');
 const nextMonthBtn = document.getElementById('nextMonthBtn');
 
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
+// Установка текущего месяца и года из localStorage или текущей даты
+let currentMonth = parseInt(localStorage.getItem('currentMonth') || new Date().getMonth());
+let currentYear = parseInt(localStorage.getItem('currentYear') || new Date().getFullYear());
+
+// Сохранение текущего состояния в localStorage
+localStorage.setItem('currentMonth', currentMonth);
+localStorage.setItem('currentYear', currentYear);
 
 export const initCalendar = async () => {
+  // Добавляем обработчики для кнопок навигации
   prevMonthBtn.addEventListener('click', () => navigateMonth(-1));
   nextMonthBtn.addEventListener('click', () => navigateMonth(1));
+  
+  // Первоначальная отрисовка календаря
   await renderCalendar();
 };
 
+// Навигация по месяцам
 const navigateMonth = (direction) => {
   currentMonth += direction;
   
+  // Корректировка года при переходе через границы
   if (currentMonth < 0) {
     currentMonth = 11;
     currentYear--;
@@ -28,28 +35,33 @@ const navigateMonth = (direction) => {
     currentMonth = 0;
     currentYear++;
   }
-localStorage.setItem('currentMonth', currentMonth);
-localStorage.setItem('currentYear', currentYear);
-document.dispatchEvent(new CustomEvent('monthChanged'));
   
+  // Сохраняем новое состояние
+  localStorage.setItem('currentMonth', currentMonth);
+  localStorage.setItem('currentYear', currentYear);
+  
+  // Отрисовываем календарь для нового месяца
   renderCalendar();
+  
+  // Отправляем событие об изменении месяца
+  document.dispatchEvent(new CustomEvent('monthChanged'));
 };
 
+// Основная функция отрисовки календаря
 const renderCalendar = async () => {
+  // Русские названия месяцев
   const monthNames = [
     'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
   ];
   
+  // Устанавливаем заголовок с текущим месяцем и годом
   currentMonthYearEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
   
-  // Получаем данные за месяц
-  const monthData = await getMonthData(currentYear, currentMonth);
-  
-  // Очищаем календарь
+  // Очищаем предыдущий календарь
   calendarModule.innerHTML = '';
   
-  // Создаем сетку календаря
+  // Создаем контейнер для календаря
   const calendarGrid = document.createElement('div');
   calendarGrid.className = 'calendar-grid';
   
@@ -62,28 +74,40 @@ const renderCalendar = async () => {
     calendarGrid.appendChild(dayElement);
   });
   
-  // Определяем первый день месяца
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  // Определяем первый день месяца и его день недели
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const firstDayOfWeek = firstDay.getDay() === 0 ? 7 : firstDay.getDay(); // Воскресенье = 0 -> 7
+  
+  // Определяем количество дней в месяце
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   
-  // Пустые ячейки для первого дня
-  for (let i = 1; i < firstDay; i++) {
+  // Определяем текущую дату для сравнения
+  const today = new Date();
+  
+  // Добавляем пустые ячейки для дней предыдущего месяца
+  for (let i = 1; i < firstDayOfWeek; i++) {
     const emptyDay = document.createElement('div');
     emptyDay.className = 'calendar-day empty';
     calendarGrid.appendChild(emptyDay);
   }
   
-  // Добавляем дни месяца
-  const today = new Date();
+  // Загружаем данные за текущий месяц
+  const monthData = await getMonthData(currentYear, currentMonth);
+  
+  // Создаем ячейки для каждого дня месяца
   for (let day = 1; day <= daysInMonth; day++) {
+    // Форматируем дату в формате YYYY-MM-DD
     const date = new Date(currentYear, currentMonth, day);
     const dateString = date.toISOString().split('T')[0];
+    
+    // Получаем данные за день
     const dayData = monthData[dateString] || null;
     
+    // Создаем элемент дня
     const dayElement = document.createElement('div');
     dayElement.className = 'calendar-day';
     
-    // Проверяем, сегодня ли это
+    // Проверяем, является ли день текущим
     if (date.getDate() === today.getDate() && 
         date.getMonth() === today.getMonth() && 
         date.getFullYear() === today.getFullYear()) {
@@ -96,7 +120,7 @@ const renderCalendar = async () => {
     dayNumber.textContent = day;
     dayElement.appendChild(dayNumber);
     
-    // Добавляем маркер если есть данные
+    // Добавляем маркер, если есть данные за день
     if (dayData) {
       const marker = document.createElement('div');
       marker.className = 'day-marker';
@@ -104,30 +128,43 @@ const renderCalendar = async () => {
       dayElement.appendChild(marker);
     }
     
-    // Добавляем краткую информацию о финансах
+    // Добавляем финансовую сводку, если есть данные
     if (dayData) {
       const summary = document.createElement('div');
       summary.className = 'day-summary';
       
-      const revenueEl = document.createElement('div');
-      revenueEl.style.color = 'var(--income-color)';
-      revenueEl.textContent = `+${dayData.revenue || 0}`;
+      // Доходы
+      if (dayData.revenue && dayData.revenue > 0) {
+        const revenueEl = document.createElement('div');
+        revenueEl.style.color = 'var(--income-color)';
+        revenueEl.textContent = `+${dayData.revenue}`;
+        summary.appendChild(revenueEl);
+      }
       
-      const expensesEl = document.createElement('div');
-      expensesEl.style.color = 'var(--expense-color)';
-      expensesEl.textContent = `-${Object.values(dayData.expenses || {}).reduce((sum, val) => sum + val, 0)}`;
+      // Расходы
+      if (dayData.expenses) {
+        const totalExpenses = Object.values(dayData.expenses).reduce((sum, val) => sum + val, 0);
+        if (totalExpenses > 0) {
+          const expensesEl = document.createElement('div');
+          expensesEl.style.color = 'var(--expense-color)';
+          expensesEl.textContent = `-${totalExpenses}`;
+          summary.appendChild(expensesEl);
+        }
+      }
       
-      summary.appendChild(revenueEl);
-      summary.appendChild(expensesEl);
       dayElement.appendChild(summary);
     }
     
-    // Добавляем обработчик клика
+    // Добавляем обработчик клика для открытия модалки
     dayElement.addEventListener('click', () => openDayModal(dateString, dayData));
     
+    // Добавляем день в сетку календаря
     calendarGrid.appendChild(dayElement);
   }
   
+  // Добавляем календарь на страницу
   calendarModule.appendChild(calendarGrid);
-  document.addEventListener('dataSaved', renderCalendar);
 };
+
+// Обновляем календарь при сохранении данных
+document.addEventListener('dataSaved', renderCalendar);

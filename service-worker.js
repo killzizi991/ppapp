@@ -1,42 +1,31 @@
-const CACHE_NAME = 'finance-tracker-v3';
+const CACHE_NAME = 'finance-tracker-simple';
 const BASE_PATH = '/ppapp/';
-const urlsToCache = [
-  BASE_PATH,
-  BASE_PATH + 'index.html',
-  BASE_PATH + 'styles.css',
-  BASE_PATH + 'app.js',
-  BASE_PATH + 'manifest.webmanifest',
-  BASE_PATH + 'calendar.js',
-  BASE_PATH + 'modal.js',
-  BASE_PATH + 'report.js',
-  BASE_PATH + 'storage.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.29.3/date_fns.min.js'
-];
+const OFFLINE_URL = BASE_PATH + 'index.html';
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Кэширование основных ресурсов');
-        return cache.addAll(urlsToCache);
+        // Кешируем только самое необходимое
+        return cache.addAll([
+          OFFLINE_URL,
+          BASE_PATH + 'styles.css',
+          BASE_PATH + 'app.js',
+          BASE_PATH + 'manifest.webmanifest'
+        ]);
       })
   );
 });
 
 self.addEventListener('fetch', event => {
-  const requestUrl = new URL(event.request.url);
-  
-  // Пропускаем запросы к другим источникам и аналитику
-  if (requestUrl.origin !== location.origin || 
-      requestUrl.pathname.includes('analytics')) {
-    return;
-  }
+  // Только GET-запросы
+  if (event.request.method !== 'GET') return;
   
   // Для навигационных запросов
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .catch(() => caches.match(BASE_PATH + 'index.html'))
+        .catch(() => caches.match(OFFLINE_URL))
     );
     return;
   }
@@ -47,20 +36,16 @@ self.addEventListener('fetch', event => {
       .then(response => {
         return response || fetch(event.request);
       })
-      .catch(() => {
-        // Возвращаем пустой ответ для прерванных запросов
-        return new Response(null, { status: 0 });
-      })
   );
 });
 
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+  // Удаляем старые кеши
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (!cacheWhitelist.includes(cacheName)) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })

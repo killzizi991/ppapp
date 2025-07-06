@@ -1,5 +1,7 @@
-// Инициализация приложения
-document.addEventListener('DOMContentLoaded', () => {
+import { initCalendar } from './calendar.js';
+import { initReportModule } from './report.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
   // Регистрация сервис-воркера
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js')
@@ -28,4 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+
+  // Инициализация модулей
+  await initCalendar();
+  initReportModule();
 });

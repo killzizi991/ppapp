@@ -37,7 +37,6 @@ export const saveDayData = async (date, data) => {
     const request = store.put({ date, ...data });
 
     request.onsuccess = () => {
-      // Дублируем в localStorage для быстрого доступа
       localStorage.setItem(`day_${date}`, JSON.stringify(data));
       resolve();
     };
@@ -50,7 +49,6 @@ export const saveDayData = async (date, data) => {
 };
 
 export const getDayData = async (date) => {
-  // Сначала проверяем localStorage
   const localData = localStorage.getItem(`day_${date}`);
   if (localData) return JSON.parse(localData);
 
@@ -80,9 +78,10 @@ export const getMonthData = async (year, month) => {
   return new Promise((resolve) => {
     const transaction = db.transaction([STORE_NAME], 'readonly');
     const store = transaction.objectStore(STORE_NAME);
+    const monthStr = String(month + 1).padStart(2, '0');
     const range = IDBKeyRange.bound(
-      `${year}-${String(month + 1).padStart(2, '0')}-01`,
-      `${year}-${String(month + 1).padStart(2, '0')}-31`
+      `${year}-${monthStr}-01`,
+      `${year}-${monthStr}-31`
     );
     const request = store.getAll(range);
 

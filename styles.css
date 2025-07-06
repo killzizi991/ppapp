@@ -157,3 +157,40 @@ body {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+.weekday-header {
+  text-align: center;
+  font-weight: 500;
+  padding: 0.5rem;
+  background-color: var(--primary);
+  color: white;
+  border-radius: 4px;
+}
+
+.day-number {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.day-summary {
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+
+.day-summary div {
+  line-height: 1.2;
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 80px;
+  padding: 8px;
+}
+
+.calendar-day.empty {
+  background-color: transparent;
+  border: none;
+  cursor: default;
+}
